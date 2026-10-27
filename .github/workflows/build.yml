@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install build dependencies
         run: |
@@ -38,7 +38,7 @@ jobs:
           test -n "$(find dist -maxdepth 1 -type f -name '*.zip' -print -quit)"
 
       - name: Upload ZIP Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ACC-Module
           path: dist/*.zip
