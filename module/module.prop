@@ -1,0 +1,8 @@
+id=auto_cache_cleaner
+name=ACC - Automatic Cache Cleaner
+version=v1.1.1
+versionCode=3
+author=raafi-abir
+github=https://github.com/raafi-abir
+description=Cache: calculating...
+updateJson=https://raw.githubusercontent.com/raafi-abir/ACC-Automatic-Cache-Cleaner/main/update.json
