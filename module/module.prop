@@ -1,7 +1,7 @@
 id=auto_cache_cleaner
 name=ACC - Automatic Cache Cleaner
-version=v1.1.1
-versionCode=3
+version=v1.1.2
+versionCode=4
 author=raafi-abir
 github=https://github.com/raafi-abir
 description=Cache: calculating...
