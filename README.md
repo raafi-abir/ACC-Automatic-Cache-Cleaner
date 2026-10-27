@@ -68,11 +68,10 @@ ACC uses the same cleaning process for both automatic and manual runs.
 
 ACC stores its configuration outside the module directory:
 
-\`\`\`
+
 /data/adb/cache_cleaner/
 ├── config.sh
 └── exclude.txt
-\`\`\`
 
 Default configuration:
 
