@@ -75,14 +75,13 @@ ACC stores its configuration outside the module directory:
 
 Default configuration:
 
-\`\`\`bash
+bash
 RUN_HOUR=0
 CLEAN_CACHE=1
 CLEAN_CORPSES=1
 CLEAN_JUNK=1
 SHOW_TOAST=1
 SCAN_INTERVAL_MIN=5
-\`\`\`
 
 | Option | Default | Description |
 |---|---:|---|
@@ -101,17 +100,17 @@ For detailed instructions, see [Configuration Guide](docs/CONFIGURATION.md).
 
 Open:
 
-\`\`\`
+
 /data/adb/cache_cleaner/exclude.txt
-\`\`\`
+
 
 Add one package name per line:
 
-\`\`\`
+
 com.example.game
 com.example.music
 com.example.application
-\`\`\`
+
 
 Excluded packages are skipped during application-cache and leftover-folder cleaning.
 
@@ -158,16 +157,16 @@ Verify that the release tag in `update.json` matches the actual GitHub release t
 
 Clone the repository:
 
-\`\`\`bash
+bash
 git clone https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner.git
 cd ACC-Automatic-Cache-Cleaner
-\`\`\`
+
 
 Build:
 
-\`\`\`bash
+bash
 ./build.sh
-\`\`\`
+
 
 The generated ZIP will be available inside `dist/`.
 
