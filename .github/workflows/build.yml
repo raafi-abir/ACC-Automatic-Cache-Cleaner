@@ -12,10 +12,6 @@ on:
       - 'build.sh'
       - '.github/workflows/build.yml'
 
-    tags:
-      - 'v*'
-      - 'V*'
-
 permissions:
   contents: write
 
