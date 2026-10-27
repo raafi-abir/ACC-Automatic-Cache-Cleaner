@@ -3,13 +3,6 @@ name: Build ACC
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - main
-    paths:
-      - 'module/**'
-      - 'build.sh'
-      - '.github/workflows/build.yml'
 
 permissions:
   contents: write
