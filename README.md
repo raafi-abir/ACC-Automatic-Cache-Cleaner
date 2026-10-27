@@ -73,7 +73,7 @@ ACC stores its configuration outside the module directory:
 ├── config.sh
 └── exclude.txt
 
-Default configuration:
+**Default configuration:**
 
 bash
 RUN_HOUR=0
@@ -162,7 +162,7 @@ git clone https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner.git
 cd ACC-Automatic-Cache-Cleaner
 
 
-Build:
+**Build:**
 
 bash
 ./build.sh
