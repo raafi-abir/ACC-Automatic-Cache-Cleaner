@@ -11,7 +11,7 @@ CLEAN_CACHE=1       # app cache + code_cache (internal and external)
 CLEAN_CORPSES=1     # leftover Android/data and Android/obb folders of uninstalled apps
 CLEAN_JUNK=1        # tombstones, ANR traces, dropbox logs, thumbnails, LOST.DIR, logcat
 SHOW_TOAST=1        # show result toast/notification
-SCAN_INTERVAL_MIN=5 # how often (minutes) the live cache size in the module card refreshes
+SCAN_INTERVAL_MIN=60 # how often (minutes) the live cache size in the module card refreshes
 CFG
 fi
 [ -f "$DATA/exclude.txt" ] || printf '# One package name per line. These are never cleaned.\n' > "$DATA/exclude.txt"
