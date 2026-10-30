@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ACC settings</title>
+<style>
+:root{
+  --bg:#f3f4f6; --surface:#ffffff; --ink:#14171c; --muted:#596070; --line:#e0e3e9;
+  --accent:#2b62f0; --accent-ink:#ffffff; --soft:#e8eefe; --danger:#b8322a;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#101216; --surface:#1a1d23; --ink:#e8eaef; --muted:#97a0ae; --line:#2a2e36;
+        --accent:#86a9ff; --accent-ink:#0b1226; --soft:#232a3d; --danger:#ff8f86;}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:34rem;margin:0 auto;padding:1.25rem 1rem 2.5rem}
+h2{font-size:.95rem;font-weight:650;margin:2rem 0 .5rem;letter-spacing:.01em}
+.hero{padding:.5rem 0 0}
+.size{font-size:3.6rem;line-height:1;font-weight:700;margin:0;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.sub{margin:.35rem 0 1rem;color:var(--muted)}
+.row-actions{display:flex;gap:.6rem}
+button{font:inherit;font-weight:600;border-radius:.75rem;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);padding:.7rem 1.1rem;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.wide{width:100%;margin-top:1.5rem}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:1rem}
+.item{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.85rem 1rem}
+.item + .item{border-top:1px solid var(--line)}
+.item label{flex:1;min-width:0}
+.item small{display:block;color:var(--muted);font-size:.84rem;line-height:1.35;margin-top:.1rem}
+select{width:7.2rem}
+select,input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);
+  border-radius:.6rem;padding:.45rem .6rem}
+input[type=number]{width:5.5rem;text-align:right}
+.switch{appearance:none;-webkit-appearance:none;flex:none;width:2.9rem;height:1.7rem;border-radius:1rem;
+  background:var(--line);position:relative;cursor:pointer;margin:0;transition:background .15s}
+.switch::after{content:"";position:absolute;top:.2rem;left:.2rem;width:1.3rem;height:1.3rem;border-radius:50%;
+  background:#fff;transition:transform .15s}
+.switch:checked{background:var(--accent)}
+.switch:checked::after{transform:translateX(1.2rem)}
+textarea{display:block;width:100%;min-height:7rem;resize:vertical;font:.9rem/1.5 ui-monospace,Menlo,Consolas,monospace;
+  color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:1rem;padding:.8rem 1rem}
+.hint{color:var(--muted);font-size:.84rem;margin:.4rem .2rem 0}
+pre{margin:1rem 0 0;padding:.8rem 1rem;background:var(--surface);border:1px solid var(--line);border-radius:1rem;
+  font:.82rem/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+details{margin-top:2rem}
+summary{cursor:pointer;font-weight:650;font-size:.95rem}
+footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
+#banner{background:var(--soft);border-radius:.8rem;padding:.8rem 1rem;margin-bottom:1rem;font-size:.92rem}
+#toast{position:fixed;left:50%;bottom:calc(1.25rem + env(safe-area-inset-bottom,0));transform:translate(-50%,2rem);
+  background:var(--ink);color:var(--bg);padding:.6rem 1rem;border-radius:.7rem;font-size:.92rem;opacity:0;
+  pointer-events:none;transition:opacity .2s,transform .2s;max-width:90vw}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.err{color:var(--danger)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <div id="banner" hidden></div>
+
+  <header class="hero">
+    <p class="size" id="size">…</p>
+    <p class="sub">of cache can be cleaned now</p>
+    <div class="row-actions">
+      <button id="clean" class="primary">Clean now</button>
+      <button id="scan">Rescan</button>
+    </div>
+  </header>
+  <pre id="out" hidden></pre>
+
+  <h2>What to clean</h2>
+  <div class="group">
+    <div class="item"><label for="CLEAN_CACHE">App cache<small>Cache and code cache of every app</small></label>
+      <input class="switch" type="checkbox" role="switch" id="CLEAN_CACHE"></div>
+    <div class="item"><label for="CLEAN_CORPSES">Leftover folders<small>Data and OBB folders of apps you uninstalled. This can't be undone.</small></label>
+      <input class="switch" type="checkbox" role="switch" id="CLEAN_CORPSES"></div>
+    <div class="item"><label for="CLEAN_JUNK">Logs and junk<small>Crash logs, ANR traces, thumbnails</small></label>
+      <input class="switch" type="checkbox" role="switch" id="CLEAN_JUNK"></div>
+    <div class="item"><label for="SHOW_TOAST">Show result<small>Toast or notification with the amount freed</small></label>
+      <input class="switch" type="checkbox" role="switch" id="SHOW_TOAST"></div>
+  </div>
+
+  <h2>Schedule</h2>
+  <div class="group">
+    <div class="item"><label for="RUN_HOUR">Daily cleanup<small>Runs once a day, or when the phone wakes after this time</small></label>
+      <select id="RUN_HOUR"></select></div>
+    <div class="item"><label for="SCAN_INTERVAL_MIN">Cache size refresh<small>Minutes between background scans (5 to 1440)</small></label>
+      <input type="number" id="SCAN_INTERVAL_MIN" min="5" max="1440" step="5" inputmode="numeric"></div>
+  </div>
+
+  <h2>Never clean these apps</h2>
+  <textarea id="exclude" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="com.example.app"></textarea>
+  <p class="hint">One package name per line. They are skipped for cache and leftover cleanup.</p>
+
+  <button id="save" class="primary wide">Save changes</button>
+
+  <details>
+    <summary>Last run</summary>
+    <pre id="log">No run recorded yet.</pre>
+  </details>
+
+  <footer><span id="ver">ACC</span> by raafi-abir · github.com/raafi-abir</footer>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const MOD = '/data/adb/modules/auto_cache_cleaner';
+  const DATA = '/data/adb/cache_cleaner';
+  const DEFAULTS = {RUN_HOUR:0, CLEAN_CACHE:1, CLEAN_CORPSES:1, CLEAN_JUNK:1, SHOW_TOAST:1, SCAN_INTERVAL_MIN:60};
+  const PKG = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
+  const $ = id => document.getElementById(id);
+  const hasKsu = typeof ksu !== 'undefined' && ksu && typeof ksu.exec === 'function';
+
+  function run(cmd) {
+    return new Promise(resolve => {
+      if (!hasKsu) return resolve({errno: -1, out: '', err: 'KernelSU API not available'});
+      const cb = 'acc_cb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+      window[cb] = (errno, out, err) => { delete window[cb]; resolve({errno, out: out || '', err: err || ''}); };
+      ksu.exec(cmd, '{}', cb);
+    });
+  }
+  function writeFile(path, text) {
+    return run("echo '" + btoa(text) + "' | base64 -d > '" + path + "'");
+  }
+  let toastTimer;
+  function toast(msg, isErr) {
+    const t = $('toast');
+    t.textContent = msg; t.classList.toggle('err', !!isErr); t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  // hour choices
+  const hourSel = $('RUN_HOUR');
+  for (let h = 0; h < 24; h++) {
+    const o = document.createElement('option');
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    o.value = h;
+    o.textContent = h === 0 ? 'Midnight' : h === 12 ? 'Noon' : h12 + ':00 ' + (h < 12 ? 'AM' : 'PM');
+    hourSel.appendChild(o);
+  }
+
+  function parseConfig(text) {
+    const v = Object.assign({}, DEFAULTS);
+    text.split('\n').forEach(line => {
+      const m = /^\s*([A-Z_]+)=(\d+)/.exec(line);
+      if (m && m[1] in v) v[m[1]] = parseInt(m[2], 10);
+    });
+    return v;
+  }
+  function buildConfig(v) {
+    return [
+      '# ACC settings (1 = on, 0 = off)',
+      'RUN_HOUR=' + v.RUN_HOUR + '          # hour of day (0-23) after which the daily run happens; 0 = 12:00 AM',
+      'CLEAN_CACHE=' + v.CLEAN_CACHE + '       # app cache + code_cache (internal and external)',
+      'CLEAN_CORPSES=' + v.CLEAN_CORPSES + '     # leftover Android/data and Android/obb folders of uninstalled apps',
+      'CLEAN_JUNK=' + v.CLEAN_JUNK + '        # tombstones, ANR traces, dropbox logs, thumbnails, LOST.DIR, logcat',
+      'SHOW_TOAST=' + v.SHOW_TOAST + '        # show result toast/notification',
+      'SCAN_INTERVAL_MIN=' + v.SCAN_INTERVAL_MIN + ' # how often (minutes) the live cache size in the module card refreshes',
+      ''
+    ].join('\n');
+  }
+
+  function fillForm(v, exclude) {
+    ['CLEAN_CACHE', 'CLEAN_CORPSES', 'CLEAN_JUNK', 'SHOW_TOAST'].forEach(k => { $(k).checked = !!v[k]; });
+    $('RUN_HOUR').value = String(Math.min(23, Math.max(0, v.RUN_HOUR)));
+    $('SCAN_INTERVAL_MIN').value = v.SCAN_INTERVAL_MIN;
+    $('exclude').value = exclude;
+  }
+
+  async function refreshSize() {
+    const r = await run("grep -E '^(description|version)=' " + MOD + '/module.prop');
+    const d = /^description=Cache:\s*(.+)$/m.exec(r.out);
+    const ver = /^version=(.+)$/m.exec(r.out);
+    $('size').textContent = d && !/calculating/i.test(d[1]) ? d[1].trim() : '…';
+    if (ver) $('ver').textContent = 'ACC ' + ver[1].trim();
+  }
+
+  async function load() {
+    const cfg = await run('cat ' + DATA + '/config.sh');
+    const exc = await run('cat ' + DATA + '/exclude.txt');
+    const log = await run('cat ' + DATA + '/last_run.log');
+    const lines = exc.out.split('\n').map(s => s.trim()).filter(s => s && !s.startsWith('#'));
+    fillForm(parseConfig(cfg.out), lines.join('\n'));
+    if (log.out.trim()) $('log').textContent = log.out.trim();
+    await refreshSize();
+  }
+
+  async function save() {
+    const v = {};
+    ['CLEAN_CACHE', 'CLEAN_CORPSES', 'CLEAN_JUNK', 'SHOW_TOAST'].forEach(k => { v[k] = $(k).checked ? 1 : 0; });
+    v.RUN_HOUR = parseInt($('RUN_HOUR').value, 10) || 0;
+    let n = parseInt($('SCAN_INTERVAL_MIN').value, 10);
+    if (isNaN(n)) n = DEFAULTS.SCAN_INTERVAL_MIN;
+    v.SCAN_INTERVAL_MIN = Math.min(1440, Math.max(5, n));
+    $('SCAN_INTERVAL_MIN').value = v.SCAN_INTERVAL_MIN;
+
+    const raw = $('exclude').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const good = [...new Set(raw.filter(s => PKG.test(s)))];
+    const bad = raw.filter(s => !PKG.test(s));
+    $('exclude').value = good.join('\n');
+
+    const a = await writeFile(DATA + '/config.sh', buildConfig(v));
+    const b = await writeFile(DATA + '/exclude.txt',
+      '# One package name per line. These are never cleaned.\n' + good.join('\n') + (good.length ? '\n' : ''));
+    if (a.errno !== 0 || b.errno !== 0) return toast('Could not save. Check root access for this module.', true);
+    toast(bad.length ? 'Saved. Skipped ' + bad.length + ' invalid package name' + (bad.length > 1 ? 's' : '') : 'Changes saved', false);
+  }
+
+  async function cleanNow() {
+    const btn = $('clean'); btn.disabled = true; btn.textContent = 'Cleaning…';
+    const out = $('out'); out.hidden = false; out.textContent = 'Running…';
+    const r = await run('sh ' + MOD + '/clean.sh 2>&1');
+    out.textContent = (r.out || r.err || 'No output').trim();
+    btn.disabled = false; btn.textContent = 'Clean now';
+    await refreshSize();
+    const log = await run('cat ' + DATA + '/last_run.log');
+    if (log.out.trim()) $('log').textContent = log.out.trim();
+  }
+
+  async function rescan() {
+    const btn = $('scan'); btn.disabled = true; btn.textContent = 'Scanning…';
+    await run('MODDIR=' + MOD + ' sh -c ". ' + MOD + '/common.sh && update_description"');
+    await refreshSize();
+    btn.disabled = false; btn.textContent = 'Rescan';
+  }
+
+  $('save').addEventListener('click', save);
+  $('clean').addEventListener('click', cleanNow);
+  $('scan').addEventListener('click', rescan);
+
+  if (!hasKsu) {
+    const b = $('banner'); b.hidden = false;
+    b.textContent = "This page needs KernelSU, KernelSU Next, APatch or MMRL to open. Magisk's own app can't show module pages, so edit /data/adb/cache_cleaner/config.sh instead.";
+    document.querySelectorAll('button,input,select,textarea').forEach(el => { el.disabled = true; });
+    $('size').textContent = '—';
+  } else {
+    load();
+  }
+})();
+</script>
+</body>
+</html>
