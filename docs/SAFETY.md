@@ -8,9 +8,9 @@ Understanding what the module removes is important before enabling automatic cle
 
 For a conservative setup, disable leftover-folder cleaning:
 
-\`\`\`bash
+```bash
 CLEAN_CORPSES=0
-\`\`\`
+```
 
 The current implementation uses a basic package-list count threshold. This does not guarantee that Android returned a complete list of installed applications.
 
@@ -25,6 +25,8 @@ ACC can clean contents of supported directories:
 - `/data/media/*/Android/data/*/cache`
 
 The cache directory itself is retained.
+
+The app currently on screen is skipped, so a manual cleanup cannot pull cache out from under the app you are using.
 
 Cache files are generally temporary, but some applications may use them to store offline resources or downloaded content.
 
@@ -42,9 +44,9 @@ ACC can inspect selected folders under:
 - `Android/data`
 - `Android/obb`
 
-It compares folder names with package names returned by Android's Package Manager.
+It compares folder names with package names returned by Android's Package Manager. The comparison is done per Android user: a folder in one user's storage is checked against the packages installed for that same user.
 
-Folders not found in the collected package list may be considered leftovers.
+Only folders whose names look like package names are considered. Folders not found in the collected package list may be considered leftovers.
 
 ### Known Limitations
 
@@ -53,7 +55,7 @@ The current implementation has important limitations:
 - It checks whether the package list contains at least 20 entries.
 - This threshold cannot guarantee that the list is complete.
 - Package Manager errors or partial results can affect detection.
-- Multiple Android users and work profiles may complicate package detection.
+- An app that was uninstalled while keeping its data is treated as a leftover.
 - A legitimate folder could potentially be mistaken for an abandoned folder.
 
 **This feature should be treated as potentially destructive.**
@@ -82,7 +84,11 @@ The exclusion list helps protect specific package names during cache and leftove
 
 However, exclusions do not protect files inside the general junk directories.
 
-## 5. Important Precautions
+## 5. Configuration Files
+
+ACC reads `config.sh` as plain `KEY=VALUE` settings. Nothing in the file is executed, and invalid values fall back to safe defaults.
+
+## 6. Important Precautions
 
 Before using ACC:
 
@@ -92,7 +98,7 @@ Before using ACC:
 4. Understand which diagnostic files are removed.
 5. Check manual cleanup output before relying on the automatic schedule.
 
-## 6. What ACC Does Not Do
+## 7. What ACC Does Not Do
 
 ACC is not designed to:
 
@@ -105,7 +111,7 @@ ACC is not designed to:
 
 ACC focuses on cache and selected temporary-file cleanup.
 
-## 7. Disclaimer
+## 8. Disclaimer
 
 Use ACC at your own risk.
 

@@ -37,7 +37,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .item + .item{border-top:1px solid var(--line)}
 .item label{flex:1;min-width:0}
 .item small{display:block;color:var(--muted);font-size:.84rem;line-height:1.35;margin-top:.1rem}
-select{width:7.2rem}
+select{width:8rem}
+.item[hidden]{display:none}
 select,input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);
   border-radius:.6rem;padding:.45rem .6rem}
 input[type=number]{width:5.5rem;text-align:right}
@@ -92,11 +93,20 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
 
   <h2>Schedule</h2>
   <div class="group">
-    <div class="item"><label for="RUN_HOUR">Daily cleanup<small>Runs once a day, or when the phone wakes after this time</small></label>
+    <div class="item"><label for="FREQ">Frequency<small>How often the automatic cleanup runs</small></label>
+      <select id="FREQ"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="custom">Custom</option></select></div>
+    <div class="item" id="row-weekly" hidden><label for="WEEK_DAY">Day of the week</label>
+      <select id="WEEK_DAY"></select></div>
+    <div class="item" id="row-monthly" hidden><label for="MONTH_DAY">Day of the month<small>1 to 28, so it exists in every month</small></label>
+      <input type="number" id="MONTH_DAY" min="1" max="28" step="1" inputmode="numeric"></div>
+    <div class="item" id="row-custom" hidden><label for="INTERVAL_DAYS">Repeat every<small>Number of days (1 to 365)</small></label>
+      <input type="number" id="INTERVAL_DAYS" min="1" max="365" step="1" inputmode="numeric"></div>
+    <div class="item"><label for="RUN_HOUR">Time<small>Runs after this time. If the phone is off or asleep, it runs when it wakes up.</small></label>
       <select id="RUN_HOUR"></select></div>
     <div class="item"><label for="SCAN_INTERVAL_MIN">Cache size refresh<small>Minutes between background scans (5 to 1440)</small></label>
       <input type="number" id="SCAN_INTERVAL_MIN" min="5" max="1440" step="5" inputmode="numeric"></div>
   </div>
+  <p class="hint" id="next"></p>
 
   <h2>Never clean these apps</h2>
   <textarea id="exclude" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="com.example.app"></textarea>
@@ -117,7 +127,8 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
 (() => {
   const MOD = '/data/adb/modules/auto_cache_cleaner';
   const DATA = '/data/adb/cache_cleaner';
-  const DEFAULTS = {RUN_HOUR:0, CLEAN_CACHE:1, CLEAN_CORPSES:1, CLEAN_JUNK:1, SHOW_TOAST:1, SCAN_INTERVAL_MIN:60};
+  const DEFAULTS = {RUN_HOUR:0, CLEAN_CACHE:1, CLEAN_CORPSES:1, CLEAN_JUNK:1, SHOW_TOAST:1, SCAN_INTERVAL_MIN:60,
+                     FREQ:'daily', WEEK_DAY:0, MONTH_DAY:1, INTERVAL_DAYS:3};
   const PKG = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
   const $ = id => document.getElementById(id);
   const hasKsu = typeof ksu !== 'undefined' && ksu && typeof ksu.exec === 'function';
@@ -140,28 +151,37 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
   }
 
-  // hour choices
+  function hourLabel(h) {
+    return h === 0 ? 'Midnight' : h === 12 ? 'Noon' : (h % 12) + ':00 ' + (h < 12 ? 'AM' : 'PM');
+  }
   const hourSel = $('RUN_HOUR');
-  for (let h = 0; h < 24; h++) {
+  for (let hr = 0; hr < 24; hr++) {
     const o = document.createElement('option');
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    o.value = h;
-    o.textContent = h === 0 ? 'Midnight' : h === 12 ? 'Noon' : h12 + ':00 ' + (h < 12 ? 'AM' : 'PM');
+    o.value = hr; o.textContent = hourLabel(hr);
     hourSel.appendChild(o);
   }
+  ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].forEach((name, i) => {
+    const o = document.createElement('option'); o.value = i; o.textContent = name; $('WEEK_DAY').appendChild(o);
+  });
 
   function parseConfig(text) {
     const v = Object.assign({}, DEFAULTS);
     text.split('\n').forEach(line => {
-      const m = /^\s*([A-Z_]+)=(\d+)/.exec(line);
-      if (m && m[1] in v) v[m[1]] = parseInt(m[2], 10);
+      const m = /^\s*([A-Z_]+)=([A-Za-z0-9]+)/.exec(line);
+      if (!m || !(m[1] in v)) return;
+      if (m[1] === 'FREQ') { if (['daily', 'weekly', 'monthly', 'custom'].includes(m[2])) v.FREQ = m[2]; }
+      else if (/^\d+$/.test(m[2])) v[m[1]] = parseInt(m[2], 10);
     });
     return v;
   }
   function buildConfig(v) {
     return [
       '# ACC settings (1 = on, 0 = off)',
-      'RUN_HOUR=' + v.RUN_HOUR + '          # hour of day (0-23) after which the daily run happens; 0 = 12:00 AM',
+      'FREQ=' + v.FREQ + '          # how often to clean: daily, weekly, monthly or custom',
+      'WEEK_DAY=' + v.WEEK_DAY + '          # weekly: day of the week, 0 = Sunday ... 6 = Saturday',
+      'MONTH_DAY=' + v.MONTH_DAY + '         # monthly: day of the month (1-28)',
+      'INTERVAL_DAYS=' + v.INTERVAL_DAYS + '     # custom: clean every N days (1-365)',
+      'RUN_HOUR=' + v.RUN_HOUR + '          # hour of day (0-23) after which a scheduled cleanup may start; 0 = 12:00 AM',
       'CLEAN_CACHE=' + v.CLEAN_CACHE + '       # app cache + code_cache (internal and external)',
       'CLEAN_CORPSES=' + v.CLEAN_CORPSES + '     # leftover Android/data and Android/obb folders of uninstalled apps',
       'CLEAN_JUNK=' + v.CLEAN_JUNK + '        # tombstones, ANR traces, dropbox logs, thumbnails, LOST.DIR, logcat',
@@ -173,9 +193,75 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
 
   function fillForm(v, exclude) {
     ['CLEAN_CACHE', 'CLEAN_CORPSES', 'CLEAN_JUNK', 'SHOW_TOAST'].forEach(k => { $(k).checked = !!v[k]; });
+    $('FREQ').value = v.FREQ;
+    $('WEEK_DAY').value = String(Math.min(6, Math.max(0, v.WEEK_DAY)));
+    $('MONTH_DAY').value = Math.min(28, Math.max(1, v.MONTH_DAY));
+    $('INTERVAL_DAYS').value = Math.min(365, Math.max(1, v.INTERVAL_DAYS));
     $('RUN_HOUR').value = String(Math.min(23, Math.max(0, v.RUN_HOUR)));
     $('SCAN_INTERVAL_MIN').value = v.SCAN_INTERVAL_MIN;
     $('exclude').value = exclude;
+    syncRows();
+  }
+
+  // ---- schedule helpers (mirror is_due in common.sh) ----
+  let lastNum = null;
+  function dayNum(y, m, d) { return Math.floor(Date.UTC(y, m - 1, d) / 86400000); }
+  function syncRows() {
+    const f = $('FREQ').value;
+    $('row-weekly').hidden = f !== 'weekly';
+    $('row-monthly').hidden = f !== 'monthly';
+    $('row-custom').hidden = f !== 'custom';
+  }
+  function readSchedule(write) {
+    const num = (el, lo, hi, df) => {
+      let n = parseInt(el.value, 10);
+      if (isNaN(n)) n = df;
+      n = Math.min(hi, Math.max(lo, n));
+      if (write) el.value = n;
+      return n;
+    };
+    const f = $('FREQ').value;
+    return {
+      FREQ: ['daily', 'weekly', 'monthly', 'custom'].includes(f) ? f : 'daily',
+      WEEK_DAY: parseInt($('WEEK_DAY').value, 10) || 0,
+      MONTH_DAY: num($('MONTH_DAY'), 1, 28, 1),
+      INTERVAL_DAYS: num($('INTERVAL_DAYS'), 1, 365, 3),
+      RUN_HOUR: parseInt($('RUN_HOUR').value, 10) || 0
+    };
+  }
+  function updateNext() {
+    const s = readSchedule(false);
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+    const today = dayNum(y, m, d), dow = now.getDay();
+    const last = (lastNum === null || lastNum > today) ? today : lastNum;
+    let sched;
+    if (s.FREQ === 'weekly') sched = today - ((dow - s.WEEK_DAY + 7) % 7);
+    else if (s.FREQ === 'monthly') sched = d >= s.MONTH_DAY ? today - d + s.MONTH_DAY
+      : dayNum(m === 1 ? y - 1 : y, m === 1 ? 12 : m - 1, s.MONTH_DAY);
+    else if (s.FREQ === 'custom') sched = last + s.INTERVAL_DAYS;
+    else sched = today;
+    let next = sched;
+    if (last >= sched) {
+      if (s.FREQ === 'weekly') next = sched + 7;
+      else if (s.FREQ === 'monthly') next = d >= s.MONTH_DAY
+        ? dayNum(m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, s.MONTH_DAY) : dayNum(y, m, s.MONTH_DAY);
+      else next = today + 1;
+    }
+    const el = $('next');
+    if (next < today || (next === today && now.getHours() >= s.RUN_HOUR)) {
+      el.textContent = 'Next cleanup: due now. It starts as soon as the phone is awake.';
+      return;
+    }
+    const when = next === today ? 'today'
+      : new Date(next * 86400000).toLocaleDateString(undefined, Object.assign({weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'}, next - today > 180 ? {year: 'numeric'} : {}));
+    el.textContent = 'Next cleanup: ' + when + ' after ' + hourLabel(s.RUN_HOUR) + '.';
+  }
+  async function loadLast() {
+    const r = await run('cat ' + DATA + '/last_run_daynum');
+    const t = r.out.trim();
+    lastNum = /^\d+$/.test(t) ? parseInt(t, 10) : null;
+    updateNext();
   }
 
   async function refreshSize() {
@@ -192,6 +278,7 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
     const log = await run('cat ' + DATA + '/last_run.log');
     const lines = exc.out.split('\n').map(s => s.trim()).filter(s => s && !s.startsWith('#'));
     fillForm(parseConfig(cfg.out), lines.join('\n'));
+    await loadLast();
     if (log.out.trim()) $('log').textContent = log.out.trim();
     await refreshSize();
   }
@@ -199,7 +286,7 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
   async function save() {
     const v = {};
     ['CLEAN_CACHE', 'CLEAN_CORPSES', 'CLEAN_JUNK', 'SHOW_TOAST'].forEach(k => { v[k] = $(k).checked ? 1 : 0; });
-    v.RUN_HOUR = parseInt($('RUN_HOUR').value, 10) || 0;
+    Object.assign(v, readSchedule(true));
     let n = parseInt($('SCAN_INTERVAL_MIN').value, 10);
     if (isNaN(n)) n = DEFAULTS.SCAN_INTERVAL_MIN;
     v.SCAN_INTERVAL_MIN = Math.min(1440, Math.max(5, n));
@@ -214,6 +301,7 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
     const b = await writeFile(DATA + '/exclude.txt',
       '# One package name per line. These are never cleaned.\n' + good.join('\n') + (good.length ? '\n' : ''));
     if (a.errno !== 0 || b.errno !== 0) return toast('Could not save. Check root access for this module.', true);
+    updateNext();
     toast(bad.length ? 'Saved. Skipped ' + bad.length + ' invalid package name' + (bad.length > 1 ? 's' : '') : 'Changes saved', false);
   }
 
@@ -224,6 +312,7 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
     out.textContent = (r.out || r.err || 'No output').trim();
     btn.disabled = false; btn.textContent = 'Clean now';
     await refreshSize();
+    await loadLast();
     const log = await run('cat ' + DATA + '/last_run.log');
     if (log.out.trim()) $('log').textContent = log.out.trim();
   }
@@ -235,6 +324,8 @@ footer{margin-top:2rem;color:var(--muted);font-size:.84rem}
     btn.disabled = false; btn.textContent = 'Rescan';
   }
 
+  ['FREQ', 'WEEK_DAY', 'RUN_HOUR'].forEach(id => $(id).addEventListener('change', () => { syncRows(); updateNext(); }));
+  ['MONTH_DAY', 'INTERVAL_DAYS'].forEach(id => $(id).addEventListener('input', updateNext));
   $('save').addEventListener('click', save);
   $('clean').addEventListener('click', cleanNow);
   $('scan').addEventListener('click', rescan);

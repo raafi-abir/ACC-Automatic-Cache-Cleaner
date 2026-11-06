@@ -4,10 +4,18 @@ MODDIR=${0%/*}
 
 LOCK=/dev/.cache_cleaner.lock   # /dev is tmpfs, so a stale lock can't survive a reboot
 if ! mkdir "$LOCK" 2>/dev/null; then
-  echo "Another cleanup is already running."
-  exit 1
+  oldpid=$(cat "$LOCK/pid" 2>/dev/null)
+  [ -z "$oldpid" ] && { sleep 1; oldpid=$(cat "$LOCK/pid" 2>/dev/null); }
+  if [ -n "$oldpid" ] && kill -0 "$oldpid" 2>/dev/null; then
+    echo "Another cleanup is already running."
+    exit 1
+  fi
+  # the previous run was killed without cleaning up its lock - take it over
+  rm -rf "$LOCK"
+  mkdir "$LOCK" 2>/dev/null || { echo "Another cleanup is already running."; exit 1; }
 fi
-trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+echo $$ > "$LOCK/pid"
+trap 'rm -rf "$LOCK"' EXIT
 trap 'exit 1' INT TERM
 
 cache_kb=0; corpse_kb=0; corpse_n=0; junk_kb=0
@@ -30,7 +38,7 @@ fi
 # ---------- 2. Corpse finder ----------
 if [ "$CLEAN_CORPSES" = 1 ]; then
   echo "- Looking for leftovers of uninstalled apps..."
-  for udir in /data/media/[0-9]*; do
+  for udir in $R/data/media/[0-9]*; do
     [ -d "$udir" ] || continue
     uid=${udir##*/}
     list="$DATA/installed_$uid.txt"
@@ -41,7 +49,7 @@ if [ "$CLEAN_CORPSES" = 1 ]; then
       continue
     fi
     bases="$udir/Android/data $udir/Android/obb"
-    [ "$uid" = 0 ] && bases="$bases /data/media/obb"
+    [ "$uid" = 0 ] && bases="$bases $R/data/media/obb"
     for base in $bases; do
       [ -d "$base" ] || continue
       for d in "$base"/*; do
@@ -64,9 +72,9 @@ fi
 # ---------- 3. Superfluous data ----------
 if [ "$CLEAN_JUNK" = 1 ]; then
   echo "- Removing logs and junk..."
-  for p in /data/tombstones /data/anr /data/system/dropbox \
-           /data/media/*/.thumbnails /data/media/*/DCIM/.thumbnails \
-           /data/media/*/Pictures/.thumbnails /data/media/*/LOST.DIR; do
+  for p in $R/data/tombstones $R/data/anr $R/data/system/dropbox \
+           $R/data/media/*/.thumbnails $R/data/media/*/DCIM/.thumbnails \
+           $R/data/media/*/Pictures/.thumbnails $R/data/media/*/LOST.DIR; do
     [ -d "$p" ] || continue
     junk_kb=$((junk_kb + $(wipe_measured "$p")))
   done
@@ -82,5 +90,6 @@ echo "Junk:      $(fmt_size $junk_kb)"
 echo "TOTAL:     $(fmt_size $total)"
 notify "Cleaned $(fmt_size $total) (cache $(fmt_size $cache_kb), leftovers $(fmt_size $corpse_kb), junk $(fmt_size $junk_kb))"
 
+mark_run
 update_description
 exit 0

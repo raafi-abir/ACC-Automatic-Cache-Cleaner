@@ -5,26 +5,20 @@ MODDIR=${0%/*}
 until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 10; done
 sleep 60
 
-STATE=$DATA/last_run_day
-today() { $DATE +%Y%m%d; }
-[ -f "$STATE" ] || today > "$STATE"
+rm -f "$DATA/last_run_day"   # state file from versions before v1.2.0 (replaced by last_run_daynum)
 
 update_description
 ticks=0
 
 # 'sleep' doesn't count time spent in deep sleep, so instead of one long sleep we poll the
-# wall clock. If the phone was asleep at midnight, the run happens as soon as it wakes.
+# wall clock. A cleanup missed while the phone was off or asleep runs as soon as it wakes.
 while true; do
-  load_config
-  d=$(today)
-  h=$($DATE +%H); h=${h#0}; h=${h:-0}
-  last=$(cat "$STATE" 2>/dev/null)
-  if [ "$d" != "$last" ] && [ "$h" -ge "$RUN_HOUR" ]; then
-    # mark the day done only if the cleanup actually ran (it exits 1 if another run holds the
-    # lock, e.g. you tapped Action at the same moment) - otherwise retry on the next poll
+  reload_if_changed
+  if is_due; then
+    # clean.sh records the run itself on success; it exits 1 if another run holds the lock
+    # (e.g. you tapped Action at the same moment), and then we simply retry on the next poll
     if sh "$MODDIR/clean.sh" > "$LOG.tmp" 2>&1; then
       mv "$LOG.tmp" "$LOG"
-      echo "$d" > "$STATE"
     fi
     ticks=0
   fi

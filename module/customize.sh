@@ -5,8 +5,12 @@ mkdir -p "$DATA"
 
 if [ ! -f "$DATA/config.sh" ]; then
 cat > "$DATA/config.sh" <<'CFG'
-# Auto Cache Cleaner settings (1 = on, 0 = off)
-RUN_HOUR=0          # hour of day (0-23) after which the daily run happens; 0 = 12:00 AM
+# ACC settings (1 = on, 0 = off)
+FREQ=daily          # how often to clean: daily, weekly, monthly or custom
+WEEK_DAY=0          # weekly: day of the week, 0 = Sunday ... 6 = Saturday
+MONTH_DAY=1         # monthly: day of the month (1-28)
+INTERVAL_DAYS=3     # custom: clean every N days (1-365)
+RUN_HOUR=0          # hour of day (0-23) after which a scheduled cleanup may start; 0 = 12:00 AM
 CLEAN_CACHE=1       # app cache + code_cache (internal and external)
 CLEAN_CORPSES=1     # leftover Android/data and Android/obb folders of uninstalled apps
 CLEAN_JUNK=1        # tombstones, ANR traces, dropbox logs, thumbnails, LOST.DIR, logcat
@@ -19,6 +23,6 @@ fi
 set_perm_recursive "$MODPATH" 0 0 0755 0755
 ui_print "- ACC - Automatic Cache Cleaner by raafi-abir"
 ui_print "- github.com/raafi-abir"
-ui_print "- Runs daily at 12:00 AM (config: $DATA/config.sh)"
+ui_print "- Cleans daily by default - change to weekly, monthly or custom days in the WebUI or $DATA/config.sh"
 ui_print "- Use the module's Action button to run it manually"
 ui_print "- Settings page: open the module's WebUI (KernelSU / KSU-Next / APatch / MMRL)"

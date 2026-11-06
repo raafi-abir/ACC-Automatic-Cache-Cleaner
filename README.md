@@ -1,365 +1,241 @@
 # ACC — Automatic Cache Cleaner
 
-**A lightweight, configurable root module for automated Android cache and junk cleanup.**
+**A lightweight root module for scheduled Android cache and junk cleanup.**
 
-ACC (Automatic Cache Cleaner) is a Magisk / KernelSU module designed to clean application cache, detect selected leftover folders, and remove specific temporary files from your Android device.
+ACC (Automatic Cache Cleaner) is a Magisk / KernelSU module designed to automatically clean application cache, detect selected leftover folders, and remove specific temporary files from your Android device.
 
-It runs automatically once per day and also supports manual cleaning whenever you need it.
+It runs automatically on a schedule you choose (daily by default, or weekly, monthly or every N days) and also supports manual cleaning through your root manager.
 
-<p align="center">
-  <b>Lightweight · Automated · Configurable</b>
-</p>
+**Lightweight · Automated · Configurable**
 
-## ✨ Features
+## Features
 
-- **Automatic Cleaning:** Runs daily at 12:00 AM by default.
-- **Manual Cleaning:** Start cleanup anytime using the module's Action button.
-- **App Cache Cleaning:** Cleans supported application cache and code-cache directories.
+- **Automatic Cleaning:** Runs daily at 12:00 AM by default. You can switch to weekly, monthly or a custom number of days.
+- **Flexible Schedule:** Pick the weekday, the day of the month, or an interval of 1 to 365 days, and the time of day.
+- **Manual Cleaning:** Start cleanup anytime using the module's Action button or the WebUI.
+- **App Cache Cleaning:** Removes contents of application cache and code-cache directories. The app currently on screen is skipped so it cannot crash mid-use.
 - **Leftover Folder Detection:** Identifies selected folders belonging to uninstalled applications.
-- **Junk Cleaning:** Removes selected logs, thumbnails, and temporary files.
-- **Logcat Cleaning:** Clears available Android logcat buffers.
-- **Live Cache Information:** Displays the estimated cleanable application-cache size directly in the module card.
-- **Toast Notifications:** Attempts to display a notification after cleanup.
-- **WebUI Configuration:** Configure supported settings through compatible root-manager WebUI interfaces.
-- **App Exclusions:** Exclude specific applications from application-cache and leftover-folder cleaning.
-- **Custom Schedule:** Change the daily cleaning hour.
-- **Configurable Scanning:** Adjust how frequently the estimated cleanable cache size is refreshed.
-- **OTA Updates:** Supports update metadata through `update.json` for compatible module managers.
+- **Junk Cleaning:** Cleans selected logs, thumbnails, and temporary directories.
+- **Live Cache Information:** Displays the estimated cleanable app-cache size in the module description.
+- **WebUI Settings:** Change every option, edit the exclude list and run a cleanup from a settings page inside your root manager.
+- **App Exclusions:** Exclude specific applications from cache and leftover-folder cleaning.
+- **OTA Updates:** Supports update metadata for compatible Magisk and KernelSU managers.
 
-## 📱 Requirements
+## Requirements
 
-- An Android device with root access.
-- Magisk, KernelSU, KernelSU Next, APatch, or another compatible environment, subject to module-manager support.
-- A compatible module installation mechanism.
+- Android device with root access.
+- Magisk (recent version with module Action support, 27+), KernelSU, KernelSU Next or APatch.
+- WebUI requires KernelSU, KernelSU Next, APatch or MMRL. Magisk's own app cannot open module web pages; edit the config file instead.
 
-**Note:** WebUI availability depends on your root manager and its support for module WebUI interfaces. Magisk's standard app does not provide the same module WebUI functionality as supported managers.
-
-## 📥 Installation
+## Installation
 
 1. Visit the [Releases](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/releases) page.
-2. Download the latest ACC ZIP package.
-3. Open your supported root manager.
-4. Select the option to install a module from storage.
-5. Choose the downloaded ZIP file.
-6. Follow the installation instructions and reboot if requested.
+2. Download the latest ACC ZIP.
+3. Open Magisk or KernelSU.
+4. Install the downloaded ZIP.
+5. Reboot if requested.
 
 After installation, ACC creates its configuration files automatically.
 
-## ⚙️ How It Works
+## How It Works
 
 ### Automatic Cleaning
 
-ACC runs a background service that checks the device's local date and time.
+ACC runs in the background and checks the device's local date and time.
 
-By default, the cleaner is scheduled to run at **12:00 AM (midnight)**.
+By default, cleanup is scheduled for midnight (12:00 AM) every day. Choose a different frequency in the WebUI or with `FREQ` in the configuration file:
 
-- The cleaning schedule uses the device's local time.
-- If the device is asleep at the scheduled time, cleanup can run after the device wakes up.
-- The first service initialization records the current date, preventing the scheduled cleaner from immediately running on the installation day.
-- The service tracks its daily execution to avoid repeatedly running the scheduled cleanup.
+| Frequency | `FREQ`    | Extra setting                    | Runs                                         |
+|-----------|-----------|----------------------------------|----------------------------------------------|
+| Daily     | `daily`   | none                             | Every day                                    |
+| Weekly    | `weekly`  | `WEEK_DAY` (0 = Sunday ... 6)    | On that weekday                              |
+| Monthly   | `monthly` | `MONTH_DAY` (1-28)               | On that day of the month                     |
+| Custom    | `custom`  | `INTERVAL_DAYS` (1-365)          | Every N days after the previous cleanup      |
 
-Actual execution depends on the device's state and the module's service behavior.
+`RUN_HOUR` sets the time of day after which a scheduled cleanup may start. The WebUI shows when the next cleanup is due.
+
+If your device is asleep or switched off at the scheduled time, cleanup runs once the device wakes up or boots, whatever the frequency.
+
+The first service initialization records the current date, so the scheduled cleaner does not immediately run on the installation day (or right after updating from an older version).
+
+If a manual cleanup is running at the scheduled time, the scheduled run retries automatically instead of being skipped.
 
 ### Manual Cleaning
 
-Want to clean your cache immediately?
+Open your root manager, locate ACC, and tap **Action** to start a cleanup manually. You can also tap **Clean now** in the WebUI. A manual cleanup counts as the latest cleanup for the schedule.
 
-1. Open your root manager.
-2. Find ACC in the installed modules list.
-3. Tap the **Action** button.
-4. Wait for the cleanup process to finish.
-
-ACC uses the same cleaning process for automatic and manual runs.
+ACC uses the same cleaning process for both automatic and manual runs.
 
 ### Cleaning Categories
 
-| Category | Description |
-|---|---|
-| App Cache | Cleans supported application-cache and code-cache contents. |
-| Leftover Folders | Detects and removes selected folders associated with uninstalled applications. |
-| System Junk | Removes selected logs, thumbnails, and temporary files. |
-| Logcat | Clears available Android logcat buffers. |
+| Category         | Description                                    |
+|------------------|------------------------------------------------|
+| App Cache        | Application cache and code-cache contents      |
+| Leftover Folders | Selected folders belonging to uninstalled apps |
+| System Junk      | Selected logs, thumbnails and temporary files  |
+| Logcat           | Clears available Android logcat buffers        |
 
-**Important:** The module does not indiscriminately delete every file on your device. Its cleaning behavior depends on the supported directories and configured cleaning options.
+### Result Message
 
-## 🖥️ WebUI and Configuration
+After each cleanup ACC shows how much was freed. If the *Bellavita Toast* helper app is installed it appears as a toast; otherwise ACC posts a notification. Set `SHOW_TOAST=0` to turn this off.
 
-ACC supports a WebUI settings page in compatible environments, including supported configurations of KernelSU, KernelSU Next, APatch, and MMRL.
+## WebUI
 
-Depending on the available interface, settings include:
+In KernelSU, KernelSU Next, APatch or MMRL, open the module's **WebUI** page to:
 
-- Enabling or disabling individual cleaning categories.
-- Changing the scheduled cleaning hour.
-- Adjusting the cache-size scan interval.
-- Managing application exclusions.
-- Triggering cleanup manually.
+- see the cleanable cache size and run **Clean now** or **Rescan**
+- turn each cleaner on or off
+- choose how often ACC cleans (daily, weekly, monthly or custom days), the time of day, and the cache-size refresh interval
+- see when the next cleanup is due
+- edit the list of excluded apps
+- view the log of the last run
 
-If your root manager does not support the module's WebUI, you can configure ACC by editing its configuration files directly.
+Changes are saved to the same configuration files described below and apply without a reboot.
 
-### Configuration Files
+## Configuration
 
 ACC stores its configuration outside the module directory:
 
-```text
+```
 /data/adb/cache_cleaner/
 ├── config.sh
 └── exclude.txt
 ```
 
-- `config.sh` contains the cleaning settings.
-- `exclude.txt` contains the application package names to exclude.
-
-### Default Configuration
-
-The default configuration is:
+**Default configuration:**
 
 ```bash
+FREQ=daily
+WEEK_DAY=0
+MONTH_DAY=1
+INTERVAL_DAYS=3
 RUN_HOUR=0
 CLEAN_CACHE=1
 CLEAN_CORPSES=1
 CLEAN_JUNK=1
 SHOW_TOAST=1
-SCAN_INTERVAL_MIN=5
+SCAN_INTERVAL_MIN=60
 ```
 
-### Available Options
+| Option            | Default | Description                                         |
+|-------------------|--------:|-----------------------------------------------------|
+| FREQ              | daily   | Cleaning frequency: `daily`, `weekly`, `monthly` or `custom` |
+| WEEK_DAY          | 0       | Weekly: day of the week (0 = Sunday ... 6 = Saturday) |
+| MONTH_DAY         | 1       | Monthly: day of the month (1–28)                    |
+| INTERVAL_DAYS     | 3       | Custom: clean every N days (1–365)                  |
+| RUN_HOUR          | 0       | Hour (0–23) after which a scheduled cleanup may start |
+| CLEAN_CACHE       | 1       | Enable application cache cleaning                   |
+| CLEAN_CORPSES     | 1       | Enable leftover-folder cleaning                     |
+| CLEAN_JUNK        | 1       | Enable selected junk cleaning                       |
+| SHOW_TOAST        | 1       | Enable cleanup result toast / notification attempt  |
+| SCAN_INTERVAL_MIN | 60      | Cache-size refresh interval in minutes (5–1440)     |
 
-| Option | Default | Description |
-|---|---:|---|
-| `RUN_HOUR` | `0` | Daily cleaning hour, from 0 to 23. |
-| `CLEAN_CACHE` | `1` | Enables application-cache cleaning. |
-| `CLEAN_CORPSES` | `1` | Enables leftover-folder detection and cleaning. |
-| `CLEAN_JUNK` | `1` | Enables selected junk cleaning. |
-| `SHOW_TOAST` | `1` | Enables attempts to display cleanup result notifications. |
-| `SCAN_INTERVAL_MIN` | `5` | Cache-size refresh interval in minutes. |
+For detailed instructions, see [Configuration Guide](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/blob/main/docs/CONFIGURATION.md).
 
-A value of `1` enables an option, while `0` disables it.
+**Safety recommendation:** Consider setting `CLEAN_CORPSES=0` until you have reviewed the limitations of leftover-folder detection.
 
-### Changing the Cleaning Schedule
+## Excluding Applications
 
-The `RUN_HOUR` setting uses the device's local 24-hour clock.
+Use the WebUI, or open:
 
-| Value | Time |
-|---:|---|
-| `0` | 12:00 AM |
-| `6` | 6:00 AM |
-| `12` | 12:00 PM |
-| `18` | 6:00 PM |
-| `23` | 11:00 PM |
-
-For example, to schedule cleaning from 2:00 AM onward:
-
-```bash
-RUN_HOUR=2
 ```
-
-The scheduled cleaner uses this value to determine when daily cleaning is allowed.
-
-### Recommended Conservative Configuration
-
-If you want to avoid automatically deleting potentially important leftover folders, consider the following configuration:
-
-```bash
-RUN_HOUR=0
-CLEAN_CACHE=1
-CLEAN_CORPSES=0
-CLEAN_JUNK=1
-SHOW_TOAST=1
-SCAN_INTERVAL_MIN=10
-```
-
-This keeps application-cache cleaning and selected junk cleaning enabled while disabling leftover-folder cleaning.
-
-For more information, read the [Configuration Guide](docs/CONFIGURATION.md).
-
-## 🚫 Excluding Applications
-
-ACC allows you to exclude specific applications from application-cache and leftover-folder cleaning.
-
-Open:
-
-```text
 /data/adb/cache_cleaner/exclude.txt
 ```
 
-Add one application package name per line.
+Add one package name per line:
 
-For example:
-
-```text
-# Important applications
+```
 com.example.game
 com.example.music
-com.example.browser
+com.example.application
 ```
 
-### Exclusion Rules
+Excluded packages are skipped during application-cache and leftover-folder cleaning.
 
-- Use one package name per line.
-- Blank lines are ignored.
-- Lines beginning with `#` are comments.
-- Package matching is exact and case-sensitive.
-- Exclusions apply to application-cache and leftover-folder cleaning.
-
-**Note:** The exclusion list does not exclude files from general junk cleaning or prevent logcat buffers from being cleared.
-
-## 🔔 Cache Information and Notifications
-
-### Live Cache Information
-
-ACC displays the estimated cleanable application-cache size in the module description.
-
-The displayed value is refreshed periodically according to `SCAN_INTERVAL_MIN`.
-
-After installation or service startup, the module may initially display:
-
-```text
-Cache: calculating...
-```
-
-This is expected while the initial cache scan is being performed.
-
-### Cleanup Notifications
-
-When `SHOW_TOAST=1`, ACC attempts to display a notification after cleanup.
-
-Notification behavior depends on Android, ROM restrictions, and the device's environment.
-
-## 🛡️ Safety and Limitations
+## Safety
 
 ACC uses root permissions to remove files. Deleted files cannot be restored by the module.
 
-Please understand the following limitations before enabling all cleaning options:
+- Cache deletion may cause applications to rebuild temporary files.
+- Some applications may download cached content again.
+- Leftover-folder detection is not guaranteed to be perfect.
+- Selected diagnostic logs and crash reports may be permanently removed.
+- Always maintain a backup of important files.
 
-- **Cache deletion:** Applications may need to rebuild temporary files or download cached content again.
-- **Leftover-folder detection:** Detection is not guaranteed to be perfect. Some folders may be incorrectly identified.
-- **Diagnostic logs:** Selected logs and crash reports may be permanently removed.
-- **System compatibility:** Cleaning behavior can vary between Android versions, ROMs, and applications.
-- **Backups:** Always maintain a backup of important files.
+Read the [Safety Guide](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/blob/main/docs/SAFETY.md) before enabling all cleaning options.
 
-### Recommended Safety Practice
+## Updating
 
-If you are unsure about leftover-folder detection, disable it first:
+ACC supports OTA updates. In KernelSU, KernelSU Next, APatch or Magisk, an **Update** button appears on the module when a newer release is published. You can also download the latest ZIP from [Releases](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/releases) and install it over the old version. Your settings and exclude list are kept.
 
-```bash
-CLEAN_CORPSES=0
-```
+## Versioning
 
-Read the [Safety Guide](docs/SAFETY.md) before enabling all cleaning options.
+ACC uses simple `major.minor` versions: v1.2, v1.3, v1.4 and so on. Every release has a higher `versionCode` than the one before, which is what lets your root manager offer the update.
 
-## 🗑️ Uninstallation
+## Uninstallation
 
-To uninstall ACC:
-
-1. Open your root manager.
-2. Locate ACC in the installed modules list.
-3. Select **Uninstall**.
+1. Open Magisk or KernelSU.
+2. Find ACC.
+3. Select Uninstall (Remove in Magisk).
 4. Reboot if requested.
 
-ACC removes its configuration and state directory during uninstallation.
+ACC removes its configuration and state directory during uninstallation. Previously deleted files cannot be restored.
 
-Previously deleted files cannot be restored by uninstalling the module.
+## Troubleshooting
 
-## 🔧 Troubleshooting
+**Cache shows "calculating..."**
 
-### Cache shows "calculating..."
+Wait for the background service to start. The first scan runs about a minute after boot.
 
-Wait for the background service to start and perform its initial scan.
+**Automatic cleaning did not run**
 
-If the value does not update, check whether the module is enabled and its service is running correctly.
+Check whether ACC is enabled and review `FREQ`, `RUN_HOUR` and the related day setting in the configuration file or WebUI. With weekly, monthly or custom schedules, cleanup only runs on its scheduled day. The WebUI shows the next due date.
 
-### Automatic cleaning did not run
+**Manual cleaning does not start**
 
-- Check whether ACC is enabled.
-- Verify the `RUN_HOUR` value in `config.sh`.
-- Consider whether the device was asleep at the scheduled time.
-- Check the module's service logs if available.
+Ensure the module is enabled and that another cleanup session is not already running.
 
-### Manual cleaning does not start
+**WebUI does not open or shows a banner**
 
-- Ensure ACC is enabled.
-- Check whether another cleanup session is already running.
-- Verify that the module installed correctly.
+Use KernelSU, KernelSU Next, APatch or MMRL. Magisk's app cannot open module web pages.
 
-### WebUI is unavailable
+**OTA update does not appear or the download failed**
 
-- Check whether your root manager supports module WebUI interfaces.
-- Verify that ACC's WebUI files were included in the installed package.
-- Try editing `/data/adb/cache_cleaner/config.sh` directly if your manager does not support WebUI.
+- `versionCode` in `update.json` must be higher than the installed module's `versionCode`.
+- The release tag in `update.json` must match the actual GitHub release tag, including capitalization.
+- The ZIP filename in `zipUrl` must match the file uploaded to the release.
 
-### OTA update download failed
+## Building from Source
 
-- Verify that the release tag in `update.json` matches the actual GitHub release tag, including capitalization.
-- Check that the ZIP filename matches the published release asset.
-- Confirm that the update metadata points to the correct release.
-
-## 🧑‍💻 Building from Source
-
-You can build ACC yourself using the source code.
-
-### 1. Clone the Repository
+Clone the repository:
 
 ```bash
 git clone https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner.git
 cd ACC-Automatic-Cache-Cleaner
 ```
 
-### 2. Build the Module
-
-Run:
+**Build:**
 
 ```bash
 ./build.sh
 ```
 
-The generated ZIP package will be available inside the `dist/` directory.
+The generated ZIP will be available inside `dist/`.
 
-### Important Build Note
+Check `git status` after building because the build script resets the module description before packaging.
 
-Check the output of:
+## Documentation
 
-```bash
-git status
-```
+- [Configuration Guide](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/blob/main/docs/CONFIGURATION.md)
+- [Safety Guide](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/blob/main/docs/SAFETY.md)
+- [Cleaning and Scheduling](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/blob/main/docs/BEHAVIOR.md)
+- [Contributing Guide](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/blob/main/CONTRIBUTING.md)
+- [Changelog](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/blob/main/changelog.md)
 
-The build script resets the module description before packaging. Review any resulting changes before committing them to your repository.
+## Disclaimer
 
-## 📚 Documentation
-
-Explore the additional documentation:
-
-- [Configuration Guide](docs/CONFIGURATION.md) — Customize cleaning settings and exclusions.
-- [Safety Guide](docs/SAFETY.md) — Understand cleaning risks and limitations.
-- [Cleaning and Scheduling](docs/BEHAVIOR.md) — Learn about cleaning behavior and scheduling.
-- [Contributing Guide](CONTRIBUTING.md) — Guidelines for contributing to the project.
-- [Changelog](changelog.md) — Review project changes.
-- [Releases](https://github.com/raafi-abir/ACC-Automatic-Cache-Cleaner/releases) — Download available releases.
-
-## 📦 OTA Updates
-
-ACC includes an `update.json` file for update metadata.
-
-Compatible root managers can use this metadata to identify and retrieve published module updates, depending on their implementation and configuration.
-
-When publishing a new version:
-
-1. Update the `version` and `versionCode` fields in `module/module.prop`.
-2. Run `./build.sh`.
-3. Create a GitHub release with the appropriate version tag.
-4. Upload the generated ZIP from `dist/`.
-5. Update `update.json` and `changelog.md`.
-6. Push the changes to the `main` branch.
-
-Ensure the release tag, download filename, and update metadata remain consistent.
-
-## ⚠️ Disclaimer
-
-ACC is provided "as is", without warranty.
-
-Use it at your own risk. The developer is not responsible for data loss, application issues, or device problems resulting from the use of this module.
+ACC is provided "as is", without warranty. Use it at your own risk. The developer is not responsible for data loss, application issues, or device problems resulting from the use of this module.
 
 ---
 
 **Developed by [raafi-abir](https://github.com/raafi-abir)**
-
-If you find ACC useful, consider starring the repository on GitHub!
