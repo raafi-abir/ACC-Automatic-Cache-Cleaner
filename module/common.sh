@@ -36,8 +36,16 @@ load_config() {
       _k=${_k#"${_k%%[![:space:]]*}"}
       _v=${_v%%#*}; _v=${_v%%[[:space:]]*}
       case "$_k" in
-        RUN_HOUR|CLEAN_CACHE|CLEAN_CORPSES|CLEAN_JUNK|SHOW_TOAST|SCAN_INTERVAL_MIN|FREQ|WEEK_DAY|MONTH_DAY|INTERVAL_DAYS)
-          eval "$_k=\$_v" ;;
+        RUN_HOUR) RUN_HOUR=$_v ;;
+        CLEAN_CACHE) CLEAN_CACHE=$_v ;;
+        CLEAN_CORPSES) CLEAN_CORPSES=$_v ;;
+        CLEAN_JUNK) CLEAN_JUNK=$_v ;;
+        SHOW_TOAST) SHOW_TOAST=$_v ;;
+        SCAN_INTERVAL_MIN) SCAN_INTERVAL_MIN=$_v ;;
+        FREQ) FREQ=$_v ;;
+        WEEK_DAY) WEEK_DAY=$_v ;;
+        MONTH_DAY) MONTH_DAY=$_v ;;
+        INTERVAL_DAYS) INTERVAL_DAYS=$_v ;;
       esac
     done <<CONFEOF
 $(tr -d '\r' < "$CONF")
